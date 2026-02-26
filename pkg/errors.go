@@ -36,6 +36,11 @@ func Conflict[T any](w http.ResponseWriter, r *http.Request, data *T) {
 	Error(err, w, r)
 }
 
+func Forbidden[T any](w http.ResponseWriter, r *http.Request, data *T) {
+	err := APIError[T]{StatusCode: http.StatusForbidden, Message: "Access denied", Code: "FORBIDDEN", Data: data}
+	Error(err, w, r)
+}
+
 func ValidateStruct(s interface{}) map[string]string {
 	if err := Validate.Struct(s); err != nil {
 		validationErrors := err.(validator.ValidationErrors)

@@ -21,18 +21,18 @@ type User struct {
 }
 
 func (u *User) SetPassword() error {
-	hashedPassword, errHash := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	if errHash != nil {
-		log.Error("Error at hashing password", "Error:", errHash.Error())
-		return errHash
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Error("Error hashing password", "error", err)
+		return err
 	}
 	u.Password = string(hashedPassword)
-
-	return errHash
+	return nil
 }
 
+// IsValidPassword returns true if the provided plain-text password matches the stored hash.
+// bcrypt.CompareHashAndPassword returns nil on a successful match.
 func (u *User) IsValidPassword(pass string) bool {
-	isSuccess := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pass))
-
-	return isSuccess != nil
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pass))
+	return err == nil
 }

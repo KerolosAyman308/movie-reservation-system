@@ -3,28 +3,33 @@ package main
 import (
 	"fmt"
 	log "log/slog"
-	"movie/system/internal/db"
-	"movie/system/internal/env"
 	"net/http"
 	"os"
+
+	"movie/system/internal/config"
+	"movie/system/internal/db"
 )
 
 func main() {
-	db, err := db.NewConn()
+	cfg := config.Load()
+
+	dbConn, err := db.NewConn(cfg)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("Failed to connect to database", "error", err)
 		os.Exit(1)
 	}
 
-	sqlDB, err := db.DB()
+	sqlDB, err := dbConn.DB()
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("Failed to get underlying sql.DB", "error", err)
 		os.Exit(1)
 	}
-
 	defer sqlDB.Close()
 
-	listenOn := fmt.Sprintf("0.0.0.0:%d", env.Env.Port)
-	http.ListenAndServe(listenOn, InitializeAPI(db))
-	log.Info("Server started listening on $w", listenOn)
+	listenOn := fmt.Sprintf("0.0.0.0:%d", cfg.Port)
+	log.Info("Server starting", "address", listenOn)
+	if err := http.ListenAndServe(listenOn, InitializeAPI(dbConn, cfg)); err != nil {
+		log.Error("Server stopped unexpectedly", "error", err)
+		os.Exit(1)
+	}
 }

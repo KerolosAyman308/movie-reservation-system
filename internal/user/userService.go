@@ -2,101 +2,90 @@ package user
 
 import (
 	"context"
-	dtos "movie/system/internal/user/DTOs"
 
-	"gorm.io/gorm"
+	dtos "movie/system/internal/user/DTOs"
 )
 
+// UserService is the concrete implementation of the Service interface.
 type UserService struct {
-	DB *gorm.DB
+	repo Repository
 }
 
-func (s *UserService) AddUser(ctx context.Context, createDto dtos.UserCreateDTO) (*dtos.UserResponse, error) {
-	user := User{
-		Email:     createDto.Email,
-		Password:  createDto.Password,
-		FirstName: createDto.FirstName,
-		LastName:  createDto.LastName,
-		IsAdmin:   *createDto.IsAdmin,
-		Birthday:  createDto.Birthday,
-	}
-	hashErr := user.SetPassword()
-	if hashErr != nil {
-		return nil, hashErr
-	}
+// NewService creates a UserService backed by the provided Repository.
+func NewService(repo Repository) Service {
+	return &UserService{repo: repo}
+}
 
-	userExist, _ := s.GetUserByEmail(ctx, createDto.Email)
-	if userExist != nil {
-		return nil, ErrDuplicateEmail
+func (s *UserService) AddUser(ctx context.Context, dto dtos.UserCreateDTO) (*dtos.UserResponse, error) {
+	u := User{
+		Email:     dto.Email,
+		Password:  dto.Password,
+		FirstName: dto.FirstName,
+		LastName:  dto.LastName,
+		IsAdmin:   *dto.IsAdmin,
+		Birthday:  dto.Birthday,
 	}
-
-	err := s.DB.Model(&user).WithContext(ctx).Create(&user).Error
-	if err != nil {
+	if err := u.SetPassword(); err != nil {
 		return nil, err
 	}
-
+	// Duplicate-email detection is handled at the DB layer via unique index —
+	// no check-then-act race condition.
+	if err := s.repo.Create(ctx, &u); err != nil {
+		return nil, err
+	}
 	return &dtos.UserResponse{
-		ID:    user.ID,
-		Email: user.Email,
+		ID:        u.ID,
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		IsAdmin:   u.IsAdmin,
+		Birthday:  u.Birthday,
 	}, nil
 }
 
-func (s *UserService) GetAllUsers(ctx context.Context) (*[]dtos.UserResponse, error) {
-	var user []User
-	err := s.DB.Model(&user).WithContext(ctx).Find(&user).Error
-
+func (s *UserService) GetAllUsers(ctx context.Context) ([]dtos.UserResponse, error) {
+	users, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	// map to the DTO
-	var dtoToReturn []dtos.UserResponse = make([]dtos.UserResponse, len(user))
-	for i, value := range user {
-		dtoToReturn[i] = dtos.UserResponse{
-			ID:    value.ID,
-			Email: value.Email,
+	result := make([]dtos.UserResponse, len(users))
+	for i, u := range users {
+		result[i] = dtos.UserResponse{
+			ID:        u.ID,
+			Email:     u.Email,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			IsAdmin:   u.IsAdmin,
+			Birthday:  u.Birthday,
 		}
 	}
-	return &dtoToReturn, nil
+	return result, nil
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, id uint) (*dtos.UserResponse, error) {
-	var user User
-	err := s.DB.Model(&user).WithContext(ctx).First(&user, id).Error
-
-	if err != nil {
-		return nil, userNotFound(id)
-	}
-
-	return &dtos.UserResponse{
-		ID:    user.ID,
-		Email: user.Email,
-	}, nil
-}
-
-func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*dtos.UserResponse, error) {
-	var user User
-	err := s.DB.Model(&user).WithContext(ctx).Where("email = ?", email).First(&user).Error
-
+	u, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
 	return &dtos.UserResponse{
-		ID:    user.ID,
-		Email: user.Email,
+		ID:        u.ID,
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		IsAdmin:   u.IsAdmin,
+		Birthday:  u.Birthday,
 	}, nil
 }
 
-func (s *UserService) ChangeRole(ctx context.Context, userId uint, role dtos.ChangeRoleDTO) error {
-	var user User
-	err := s.DB.Model(&user).WithContext(ctx).Where("ID = ?", userId).First(&user).Error
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	return s.repo.FindByEmail(ctx, email)
+}
+
+func (s *UserService) ChangeRole(ctx context.Context, id uint, dto dtos.ChangeRoleDTO) error {
+	u, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return userNotFound(userId)
+		return err
 	}
-
-	user.IsAdmin = *role.IsAdmin
-	updateErr := s.DB.Model(&user).WithContext(ctx).Where("ID = ?", userId).Save(user).Error
-
-	return updateErr
+	u.IsAdmin = *dto.IsAdmin
+	return s.repo.Update(ctx, u)
 }

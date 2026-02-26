@@ -47,8 +47,10 @@ services:
     ports:
     - "8100:8000"
     depends_on:
-    - database
-    - migrator
+      database:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     networks: 
     - movie_net_priv
     - movie_net_pub

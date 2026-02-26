@@ -9,8 +9,12 @@ import (
 )
 
 type env struct {
-	Port         int
-	MysqlAddress string
+	Port               int
+	MysqlAddress       string
+	JWTSecret          string
+	RefreshTokenSecret string
+	JWTAudience        string
+	JWTIssuer          string
 }
 
 var Env env = initEnv()
@@ -23,8 +27,12 @@ func initEnv() env {
 
 	defaultPort := 8000
 	return env{
-		Port:         getValueAsInt("PORT", &defaultPort),
-		MysqlAddress: getValue("MYSQLADDRESS", nil),
+		Port:               getValueAsInt("PORT", &defaultPort),
+		MysqlAddress:       getValue("MYSQLADDRESS", nil),
+		JWTSecret:          getValue("JWTSecret", nil),
+		JWTAudience:        getValue("JWTAudience", nil),
+		JWTIssuer:          getValue("JWTIssuer", nil),
+		RefreshTokenSecret: getValue("RefreshTokenSecret", nil),
 	}
 }
 
