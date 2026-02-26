@@ -23,7 +23,7 @@ services:
     image: arigaio/atlas:1.1.5-alpine
     entrypoint: ["/bin/sh"]
     ## Sleep for 10 second to catch up with the db
-    command: ["-c", "sleep 10 && atlas migrate apply --dir file:///migrations --url $$HOSTURL"]
+    command: ["-c", "atlas migrate apply --dir file:///migrations --url $$HOSTURL"]
     container_name: movie-db-migrator
     restart: no
     volumes:
@@ -31,7 +31,8 @@ services:
     env_file:
       - ./migrator.env
     depends_on:
-    -  database
+      database:
+        condition: service_healthy
     networks:
       - movie_net_priv
 

@@ -12,7 +12,7 @@ COPY . .
 
 RUN go build -o ./app ./cmd
 
-FROM golang:1.26.0-alpine3.23 as PROD
+FROM alpine3.23 as PROD
 WORKDIR /prod
 COPY --from=BASE /build/app ./app
 
