@@ -1,0 +1,52 @@
+package env
+
+import (
+	"log"
+	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
+)
+
+type env struct {
+	Port         int
+	MysqlAddress string
+}
+
+var Env env = initEnv()
+
+func initEnv() env {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	defaultPort := 8000
+	return env{
+		Port:         getValueAsInt("PORT", &defaultPort),
+		MysqlAddress: getValue("MYSQLADDRESS", nil),
+	}
+}
+
+func getValue(key string, fallBack *string) string {
+	value, isExist := os.LookupEnv(key)
+	if !isExist && fallBack != nil {
+		return *fallBack
+	}
+
+	return value
+}
+
+func getValueAsInt(key string, fallBack *int) int {
+	value, isExist := os.LookupEnv(key)
+	if !isExist && fallBack != nil {
+		return *fallBack
+	}
+
+	valueAsInt, error := strconv.ParseInt(value, 10, 64)
+	if error != nil && fallBack != nil {
+		return *fallBack
+	}
+
+	return int(valueAsInt)
+}

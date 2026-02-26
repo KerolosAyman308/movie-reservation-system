@@ -1,0 +1,53 @@
+version: "3"
+services:
+  database:
+    image: mysql:8.0.45-debian
+    container_name: mysql-movie
+    restart: Always
+    ports:
+      - "3306:3306"
+    env_file:
+      - db.env
+    networks:
+    - movie_net_priv
+    volumes:
+      - mysqldata:/var/lib/mysql
+
+  migrator:
+    build:
+      context: ../../.
+      dockerfile: ../../Dockerfile_migrator
+    image: kerolosayman308/movie-reservation:migrator-1.0.0
+    command: ["--url", "$$HOSTURL"]
+    container_name: movie-db-migrator
+    restart: Always
+    env_file:
+      - ./migrator.env
+    depends_on:
+    -  database
+    networks:
+      - movie_net_priv
+
+  app-backend: 
+    build:
+      context: ../../.
+      dockerfile: ../../Dockerfile_migrator
+    image: kerolosayman308/movie-reservation:backend-1.0.0
+    container_name: movie-backend
+    env_file: ../../.env
+    restart: Always
+    depends_on:
+    - database
+    - migrator
+    networks: 
+    - movie_net_priv
+    - movie_net_pub
+    
+networks:
+  movie_net_priv:
+    internal: true
+  movie_net_pub:
+
+volumes:
+  mysqldata:
+    driver: local
