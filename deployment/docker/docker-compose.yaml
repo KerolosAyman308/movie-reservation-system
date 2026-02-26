@@ -1,9 +1,15 @@
 version: "3"
 services:
   database:
-    image: mysql:8.0.45-debian
+    image: mysql:8.0
     container_name: mysql-movie
-    restart: Always
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     ports:
       - "3306:3306"
     env_file:
@@ -14,13 +20,14 @@ services:
       - mysqldata:/var/lib/mysql
 
   migrator:
-    build:
-      context: ../../.
-      dockerfile: ../../Dockerfile_migrator
-    image: kerolosayman308/movie-reservation:migrator-1.0.0
-    command: ["--url", "$$HOSTURL"]
+    image: arigaio/atlas:1.1.5-alpine
+    entrypoint: ["/bin/sh"]
+    ## Sleep for 10 second to catch up with the db
+    command: ["-c", "sleep 10 && atlas migrate apply --dir file:///migrations --url $$HOSTURL"]
     container_name: movie-db-migrator
-    restart: Always
+    restart: no
+    volumes:
+    - ../../migrations:/migrations
     env_file:
       - ./migrator.env
     depends_on:
@@ -31,11 +38,13 @@ services:
   app-backend: 
     build:
       context: ../../.
-      dockerfile: ../../Dockerfile_migrator
+      dockerfile: Dockerfile
     image: kerolosayman308/movie-reservation:backend-1.0.0
     container_name: movie-backend
     env_file: ../../.env
-    restart: Always
+    restart: always
+    ports:
+    - "8100:8000"
     depends_on:
     - database
     - migrator

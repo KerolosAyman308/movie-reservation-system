@@ -5,7 +5,7 @@ ENV CGO_ENABLED=0 \
     GOARCH=amd64
 
 WORKDIR /build
-COPY go.mod .
+COPY go.mod go.sum ./
 
 RUN go mod download
 COPY . .

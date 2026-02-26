@@ -1,7 +1,7 @@
 package env
 
 import (
-	"log"
+	log "log/slog"
 	"os"
 	"strconv"
 
@@ -18,7 +18,7 @@ var Env env = initEnv()
 func initEnv() env {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Error("Error loading .env file")
 	}
 
 	defaultPort := 8000
