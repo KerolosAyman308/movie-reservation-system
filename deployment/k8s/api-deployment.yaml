@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: movie-backend
+  name: movie-backend
+  namespace: movie-reservation
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: movie-backend
+  strategy: 
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: movie-backend
+    spec:
+      volumes:
+        - name: shared-migration
+          emptyDir: {}
+        - name: api-env
+          secret:
+            secretName: api-secret
+      initContainers:
+        - name: waiting-for-db
+          image: busybox:latest
+          command: ["/bin/sh", "-c"]
+          args: 
+            - |
+              until nc -z db-statefulset-0.db-service.movie-reservation.svc.cluster.local. 3306; do 
+                sleep 2; 
+              done;
+              echo "DB is UP"
+        - name: copy-migration
+          image: kerolosayman308/movie-reservation:backend-1.0.0
+          command:
+            - sh
+            - "-c"
+            - "cp -R /prod/migrations /migrations"
+          volumeMounts:
+            - mountPath: /migrations
+              name: shared-migration
+        - name: apply-migrations
+          image: arigaio/atlas:1.1.5-alpine
+          command: ["sh"]
+          args: ["-c", "atlas migrate apply --dir file:///migrations --url mysql://$MYSQL_PASSWORD:$MYSQL_USER@db-statefulset-0.db-service.movie-reservation.svc.cluster.local.:3306/$MYSQL_DATABASE"]
+          envFrom:
+            - secretRef:
+                name: db-secret
+          volumeMounts:
+            - mountPath: /migrations
+              name: shared-migration
+      containers:
+      - image: kerolosayman308/movie-reservation:backend-1.0.0
+        name: movie-reservation
+        volumeMounts:
+          - mountPath: /prod/.env
+            name: api-env
+            subPath: .env
+        ports:
+        - containerPort: 8100
+        resources: 
+          limits:
+            memory: 500Mi
+            cpu: "0.2"

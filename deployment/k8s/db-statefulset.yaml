@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  labels:
+    app: db-statefulset
+  name: db-statefulset
+  namespace: movie-reservation
+spec:
+  serviceName: db-service
+  volumeClaimTemplates:
+  - metadata:
+      name: db-statefulset-pvc
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: ""
+      resources:
+        requests:
+          storage: 250Mi
+
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-statefulset
+  template:
+    metadata:
+      labels:
+        app: db-statefulset
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        envFrom:
+          - secretRef:
+              name: db-secret
+        readinessProbe:
+          exec:
+            command: ["mysqladmin", "ping", "-h", "localhost"]
+          failureThreshold: 5
+          periodSeconds: 5
+        ports:
+        - containerPort: 3306
+        resources: 
+          requests:
+            cpu: "0.2"
+            memory: 250Mi
+          limits:
+            cpu: "1"
+            memory: 500Mi
