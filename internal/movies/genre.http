@@ -1,0 +1,18 @@
+@baseUrl = http://localhost:8000/api/v1/genres
+@token = ADMIN_TOKEN
+
+### Get Paginated Genres
+GET {{baseUrl}}?page=1&limit=10
+
+### Create Genre
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "test del"
+}
+
+### Delete Genre
+DELETE {{baseUrl}}/6
+Authorization: Bearer {{token}}
