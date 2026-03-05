@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"io"
+	f "movie/system/internal/files"
+	movies "movie/system/internal/movies/models"
 	user "movie/system/internal/user"
 	"os"
 
@@ -13,6 +15,10 @@ import (
 func main() {
 	stmts, err := gormschema.New("mysql").Load(
 		&user.User{},
+		&movies.Genre{},
+		&movies.Movie{},
+		&movies.MovieGenres{},
+		&f.File{},
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
