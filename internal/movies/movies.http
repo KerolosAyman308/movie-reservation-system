@@ -1,0 +1,50 @@
+@baseUrl = http://localhost:8000/api/v1/movies
+@token = ADMIN_TOKEN
+@movieId = 6
+
+### Get Paginated Movies
+GET {{baseUrl}}?page=1&limit=10
+
+### Create Movie
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "title": "Inception3",
+    "description": "Some cool desc",
+    "genres": [3]
+}
+
+### Upload Movie Image
+POST {{baseUrl}}/{{movieId}}/image
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=MyCustomBoundary
+
+--MyCustomBoundary
+Content-Disposition: form-data; name="file"; filename="errors.go"
+Content-Type: application/octet-stream
+
+< ./errors.go
+--MyCustomBoundary--
+### Add Movie Genres
+POST {{baseUrl}}/{{movieId}}/genres/add
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "genres": [3, 4]
+}
+
+### Delete Movie Genres
+POST {{baseUrl}}/{{movieId}}/genres/delete
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "genres": [3]
+}
+
+### Delete Movie
+DELETE {{baseUrl}}/{{movieId}}
+Authorization: Bearer {{token}}

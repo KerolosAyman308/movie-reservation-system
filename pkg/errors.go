@@ -46,7 +46,7 @@ func ValidateStruct(s interface{}) map[string]string {
 		validationErrors := err.(validator.ValidationErrors)
 		errorMap := make(map[string]string)
 		for _, err := range validationErrors {
-			errorMap[err.Field()] = err.Error()
+			errorMap[err.Field()] = err.Tag()
 		}
 
 		return errorMap
