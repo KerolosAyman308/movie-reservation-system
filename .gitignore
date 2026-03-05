@@ -1,3 +1,5 @@
 .env
 tmp
 deployment/docker/*.env
+.idea
+.continue

@@ -4,3 +4,6 @@ tmp
 deployment
 .air.toml
 *.md
+.idea
+.continue
+.github

@@ -31,3 +31,8 @@ ant edit the lunch.json:
 ```
 
 f5 to attach the debugger in vscode t
+
+
+
+To run tests:
+CGO_ENABLED=1 go test -v ./...
