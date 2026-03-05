@@ -16,6 +16,9 @@ type Config struct {
 	JWTAudience        string
 	JWTIssuer          string
 	IsProduction       bool
+	Protocol           string
+	HostName           string
+	File               ConfigFile
 }
 
 // Load reads environment variables (with optional .env file) and returns a Config.
@@ -33,6 +36,15 @@ func Load() Config {
 		JWTIssuer:          getValue("JWT_ISSUER", nil),
 		RefreshTokenSecret: getValue("REFRESH_TOKEN_SECRET", nil),
 		IsProduction:       getValue("APP_ENV", nil) == "production",
+		Protocol:           getValue("PROTOCOL", nil),
+		HostName:           getValue("HOSTNAME", nil),
+		File: ConfigFile{
+			BucketName:    getValue("BUCKETNAME", nil),
+			FilesBasePath: getValue("FILEBASEPATH", nil),
+			AWSAccessKey:  getValue("AWS_ACCESS_KEY", nil),
+			AWSSecretKey:  getValue("AWS_SECRET_KEY", nil),
+			AWSHost:       getValue("AWS_URL", nil),
+		},
 	}
 }
 
