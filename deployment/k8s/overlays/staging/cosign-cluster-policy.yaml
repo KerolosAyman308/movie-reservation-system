@@ -29,4 +29,4 @@ spec:
         url: https://fulcio.sigstore.dev
         identities:
           - issuer: "https://token.actions.githubusercontent.com"
-            subject: "https://github.com/KerolosAyman308/testci/.github/workflows/master-staging-signing-image-worflow.yaml@refs/heads/staging"
+            subject: "https://github.com/KerolosAyman308/movie-reservation-system/.github/workflows/master-staging-signing-image-worflow.yaml@refs/heads/staging"
