@@ -1,0 +1,8 @@
+signingConfig:
+  cas:
+    - oidcProviderURL: https://token.actions.githubusercontent.com
+      clientID: sigstore
+      url: https://fulcio.sigstore.dev
+  transparencyLogs:
+    - url: https://rekor.sigstore.dev
+      hashAlgorithm: sha256

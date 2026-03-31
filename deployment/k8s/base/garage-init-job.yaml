@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-init
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      serviceAccountName: garage-job
+      volumes:
+      - name: garage-init
+        configMap:
+          name: garage-init-cm
+          defaultMode: 0755
+      containers:
+      - name: kubectl
+        image: bitnami/kubectl@sha256:f6dd048d1c14d89ede9636cd6bee0ff0238579c33ea1e51b2fb1a1cfd62ea246
+        volumeMounts:
+        - name: garage-init
+          mountPath: /scripts/garage-init.sh
+          subPath: garage-init.sh
+        command: 
+        - sh
+        - "-c"
+        - 'kubectl config set-credentials garage --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) &&
+           kubectl config set-cluster k8s --server=https://kubernetes.default.svc.cluster.local  --embed-certs --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt &&
+           kubectl config set-context k8s-garage --cluster=k8s --user=garage -n=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace) &&
+           kubectl config use-context k8s-garage &&
+           sh /scripts/garage-init.sh
+         '
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: movie-reservation-staging
+  namespace: argocd
+spec:
+  destination:
+    namespace: movie-staging
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: deployment/k8s/overlays/staging
+    repoURL: https://github.com/KerolosAyman308/movie-reservation-system.git
+    targetRevision: staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - jsonPointers:
+        - /spec/replicas
+      kind: Deployment
+      group: apps
+      namespace: movie-staging

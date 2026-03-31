@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-service
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook: PreSync
+  labels:
+    app: garage
+spec:
+  ports:
+  - port: 3900
+    protocol: TCP
+    name: api
+    targetPort: 3900
+  - port: 3902
+    protocol: TCP    
+    name: web
+    targetPort: 3902
+  clusterIP: None
+  selector:
+    app: garage

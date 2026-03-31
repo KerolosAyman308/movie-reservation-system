@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: secure-code-box-application
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  destination:
+    namespace: secure-code-box
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: operator
+    repoURL: https://charts.securecodebox.io/
+    targetRevision: 5.6.0
+    helm:
+      values: |
+        minio:
+          enabled: true
+          persistence:
+            size: "1Gi"
+        s3:
+          enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: zap-automation-framework-application
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  destination:
+    namespace: secure-code-box
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: zap-automation-framework
+    repoURL: https://charts.securecodebox.io/
+    targetRevision: 5.6.0
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

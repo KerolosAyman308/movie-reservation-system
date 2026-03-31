@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: movie-backend
+    enforce-movie-staging: "true"
+  name: movie-backend
+spec:
+  selector:
+    matchLabels:
+      app: movie-backend
+  strategy: 
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: movie-backend
+        enforce-movie-staging: "true"
+    spec:
+      volumes:
+        - name: shared-migration
+          emptyDir: {}
+        - name: shared-env
+          emptyDir: {}
+        - name: api-env
+          secret:
+            secretName: api-secret
+        - name: aws-secret
+          secret:
+            secretName: garage-app-secret
+      initContainers:
+        - name: waiting-for-db
+          image: busybox@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          command: ["/bin/sh", "-c"]
+          args: 
+            - |
+              until nc -z db-statefulset-0.db-service 3306; do 
+                sleep 2; 
+              done;
+              echo "DB is UP"
+              until nc -z garage-0.garage-service 3900; do 
+                sleep 2; 
+              done;
+              echo "Garage is UP"
+        - name: copy-migration
+          image: kerolosayman308/movie-reservation@sha256:0103ff13f6d7356c36c32f82ab6e5f06a1df193280af7ced93f30b01c779f8dd
+          command:
+            - sh
+            - "-c"
+            - "cp -R /prod/migrations/. /migrations"
+          volumeMounts:
+            - mountPath: /migrations
+              name: shared-migration
+        - name: apply-migrations
+          image: arigaio/atlas@sha256:97322b013f25b6c9dd7a7f76c4263c4bc51a0dfb68ec634fd2f642779eeb3d51
+          command: ["sh"]
+          args: ["-c", "atlas migrate apply --dir file:///migrations --url mysql://$MYSQL_PASSWORD:$MYSQL_USER@db-statefulset-0.db-service:3306/$MYSQL_DATABASE"]
+          envFrom:
+            - secretRef:
+                name: db-secret
+          volumeMounts:
+            - mountPath: /migrations
+              name: shared-migration
+        - name: config-env
+          image: busybox@sha256:1487d0af5f52b4ba31c7e465126ee2123fe3f2305d638e7827681e7cf6c83d5e
+          command: ["/bin/sh", "-c"]
+          args: 
+            - |
+              touch /prod/.env
+              cat /secrets/.app-env > /prod/.env
+              echo "\n" >>  /prod/.env
+              cat /aws/.aws-secret >> /prod/.env
+          volumeMounts:
+          - mountPath: /secrets/.app-env
+            name: api-env
+            subPath: .env
+          - mountPath: /aws/.aws-secret
+            name: aws-secret
+            subPath: .secrets
+          - mountPath: /prod/
+            name: shared-env
+      containers:
+      - image: kerolosayman308/movie-reservation@sha256:0103ff13f6d7356c36c32f82ab6e5f06a1df193280af7ced93f30b01c779f8dd
+        name: movie-reservation
+        volumeMounts:
+          - mountPath: /prod/.env
+            subPath: .env
+            name: shared-env
+        ports:
+        - containerPort: 8000
+        resources: 
+          requests:
+            memory: 100Mi
+            cpu: "0.2"

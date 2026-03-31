@@ -1,0 +1,76 @@
+name: Sign docker image on staging or master and Delete closed branch
+
+on:
+  pull_request:
+    branches:
+      - master
+      - staging
+    types:
+      - closed
+
+env:
+  BASE_REPO: kerolosayman308/movie-reservation
+
+jobs:
+  Sign_Image:                                            ## means pull request comes from staging to master         ## deployment to any
+    if: ${{ github.event.pull_request.merged == true && ( github.head_ref == 'staging'  || contains( github.head_ref, 'deployment/'))}}
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: read
+      packages: write
+      id-token: write ## allowing the cosign "keylessly" to use OIDC so i can get temporary short lived key from Fulcio to sign the image with
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 ## v4.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd ## v6.3.0
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 ## v4.1.0
+        with:
+          cosign-release: 'v2.2.4' 
+      ## I was able to verify it like this cosign verify --certificate-identity "https://github.com/KerolosAyman308/testci/.github/workflows/ci-cd-workflow.yaml@refs/pull/1/merge" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" image tag
+      ##  note that if the CI runs on the pull request it will @refs/pull/1/merge
+      ##  but if the CI runs on the branch itself it will be @refs/heads/branch_name 
+      ##  
+
+      ## Getting the image tag from staging deployment 
+      ## Getting the Digest SHA256 of the docker image to sign this is safer way to sign the container rather from the tags cause this is immutable
+
+      ## The RepoDigests is array in case the image pushed to multiple registries so i want to make my self safe and getting my repo
+      - name: Sign image with Cosign
+        env:
+          COSIGN_EXPERIMENTAL: "1" 
+        run: |
+          export IMAGE=$(yq eval '.spec.template.spec.containers[0].image' deployment/k8s/overlays/staging/api-deployment.yaml)
+          cosign sign --yes "$IMAGE"
+
+  Delete_Branch:
+    runs-on: ubuntu-latest
+    needs: ["Sign_Image"]
+    if: |
+      github.head_ref != 'staging' &&  github.head_ref != 'master' && 
+      !cancelled() && 
+      (needs.Sign_Image.result == 'success' || needs.Sign_Image.result == 'skipped') &&
+      contains(github.event.pull_request.labels.*.name, 'delete')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd ## v6.3.0
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Login to git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Delete pull request branch
+        run: |
+          git push origin --delete ${{ github.head_ref }}

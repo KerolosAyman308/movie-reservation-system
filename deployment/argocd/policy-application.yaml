@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sigstore-policy-controller
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://sigstore.github.io/helm-charts'
+    targetRevision: 0.10.6
+    chart: policy-controller
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: cosign-movies
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

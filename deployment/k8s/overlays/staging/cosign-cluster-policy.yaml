@@ -1,0 +1,32 @@
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: cosign-movies-staging
+spec:
+  match:
+    - resource: deployments
+      version: v1
+      group: apps
+      selector:
+        matchLabels:
+          enforce-movie-staging: "true"
+    - resource: replicasets
+      version: v1
+      group: apps
+      selector:
+        matchLabels:
+          enforce-movie-staging: "true"
+    - resource: pods
+      version: v1
+      selector:
+        matchLabels:
+          enforce-movie-staging: "true"
+  images:
+  - glob: "index.docker.io/kerolosayman308/movie-reservation*"
+  authorities:
+    - name: github-actions-keyless
+      keyless:
+        url: https://fulcio.sigstore.dev
+        identities:
+          - issuer: "https://token.actions.githubusercontent.com"
+            subject: "https://github.com/KerolosAyman308/testci/.github/workflows/master-staging-signing-image-worflow.yaml@refs/heads/staging"

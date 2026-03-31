@@ -1,0 +1,37 @@
+Full CICD pipeline:
+we have two branches master and staging
+Dev to create new feature or fix but or any thing 
+creates new branch from the staging example feature/new bug/fix
+after finishing the request pull request if the pull request has ci labels then it go throw CI 
+----------------------Step 1 ---------------------------------------------
+---Unit tests-----------------------------------\ parallel
+---Trivy on code and sonarqube and quality gate  \ parallel
+pipeline will fail if quality gate failed or unittest failed or Trivy failed on critical
+Trivy full scan report will upload as artifact any way
+-----image build 
+docker start build the image 
+Trivy scan the image and generate a report that will run any way and Trivy will fail on critical image scan
+then image pushed to docker
+------Open deployment PR bu github bot
+this changes the k8s deployment images in the code to the new image and commit it in a new branch starts with /deployment/pull request barnc name and with delete label
+---------on merge closed if dev added delete label to the pull request the branch will be deleted
+-----------------------------step 2------------------------------
+on the approve the deployment PR and merge closed cosing sign the image and upload the sig to the docker registry
+and delete the branch 
+the signature has the staging only sig
+--------------------------step 3 ----------------------------------------
+on merging staging pull request with the master cosign sign the image with master also 
+---------------------------CD-----------------------------------------
+Argocd listening on the staging branch and apply the changes auto 
+there is policy controller for the sigstore with imagePolicy is validating webhook that ensure that all images are pinning hash and the main image has valid cosing sig 
+----------For staging
+cosing must have the staging sig 
+
+----------For master
+cosing must have the master sig 
+an argo rollout with canary applied to the new rollout to ensure availability and rollback in case of failure 
+
+applications on both env uses garagehq for s3 access 
+argocd with hook PreSync and sync wave start the garagehq and with a job with HookSucceeded then that initialized the garahq and create/update a secret so the deployment app can use it
+
+Argo using app of apps approach

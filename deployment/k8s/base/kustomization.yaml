@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- api-secert.yaml
+- api-svc.yaml
+- db-secrets.yaml
+- db-statefulset.yaml
+- db-svc.yaml
+- api-hpa.yaml
+- job-garage-role-binding.yaml
+- garage-statefulset.yaml
+- garage-service.yaml
+- garage-service-token.yaml
+- garage-secret.yaml
+- garage-init-job.yaml
+#- allow-third-policy.yaml
+
+configMapGenerator:
+- name: garage-init-cm
+  files:
+  - garage-init.sh
+  options:
+    disableNameSuffixHash: true
+    annotations:
+      argocd.argoproj.io/sync-wave: "-2"
+      argocd.argoproj.io/hook: PreSync

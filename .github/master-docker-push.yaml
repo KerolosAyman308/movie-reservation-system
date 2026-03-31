@@ -1,0 +1,45 @@
+# name: Docker Build and Push
+# ## Currently i dont need this cause my arch is like that
+# ## master >       staging > (create new branch) feature|bug/description 
+# ##  /\               |                       |
+# ##  |                |                       \/
+# ##  |stage           |    new pull request with ci label to trigger the pipeline
+# ##  |branch          |      \/
+# ##  |merge           |       |on pipeline success this branch will be created auto
+# ##  |to master       |       | (Create new deployment staging branch) deployment/name-of-feature-the-branch 
+# ##  |<--------------/\       |
+# ##                   |       |
+# ##                   |----- <
+# ##                   merge the deployment branch to staging
+# ##  argo cd is monitor the staging branch to deploy to the staging namespace to do more tests
+# ##  and monitor the master the apply canary rollout deployment
+# on:
+#   pull_request:
+#     types:
+#       - closed
+#     branches:
+#       - master
+
+# jobs:
+#   push_to_docker:
+#     runs-on: ubuntu-latest
+#     if: ${{ github.event.pull_request.merged == true }}
+#     name: push the latest backend to docker
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Log in to Docker Hub
+#         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
+
+#       - name: build docker image
+#         run: |
+#           docker build -t kerolosayman308/movie-reservation:backend-1.0.${{ github.run_number }} .
+
+#       - name: push Docker image
+#         run: |
+#           docker push kerolosayman308/movie-reservation:backend-1.0.${{ github.run_number }}

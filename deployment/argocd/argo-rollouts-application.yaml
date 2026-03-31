@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-rollouts
+  namespace: argocd
+spec:
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: argo-rollouts
+    helm:
+      parameters:
+      - name: dashboard.service.type
+        value: NodePort
+      - name: dashboard.service.nodePort
+        value: "30053"
+      - name: dashboard.enabled
+        value: "true"
+    repoURL: https://argoproj.github.io/argo-helm
+    targetRevision: 2.40.8
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true

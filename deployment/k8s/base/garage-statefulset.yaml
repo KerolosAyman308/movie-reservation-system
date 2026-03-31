@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: garage
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+spec:
+  selector:
+    matchLabels:
+      app: garage 
+  serviceName: "garage-service"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: garage 
+    spec:
+      containers:
+      - name: garage
+        image: dxflrs/garage@sha256:45a61ce3f7c9c24fc23d9ed2b09b27ed560ab87b34605d175d5c588f539c24e4
+        ports:
+        - containerPort: 3900
+          name: api
+        - containerPort: 3902
+          name: bucket-web
+        volumeMounts:
+        - name: stg
+          mountPath: /var/lib/garage/
+        - name: garage-cm
+          subPath: garage.toml
+          mountPath: /etc/garage.toml
+      volumes:
+      - name: garage-cm
+        secret:
+          secretName: garage-secret
+  volumeClaimTemplates:
+  - metadata:
+      name: stg
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "local-path"
+      resources:
+        requests:
+          storage: 1Gi

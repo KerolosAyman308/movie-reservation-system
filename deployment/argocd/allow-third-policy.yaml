@@ -1,0 +1,17 @@
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: allow-third-party-images
+spec:
+  images:
+    - glob: "*mysql*"
+    - glob: "*busybox*"
+    - glob: "*arigaio/atlas*"
+    - glob: "**/*mysql*"
+    - glob: "**/*busybox*"
+    - glob: "**/*arigaio/atlas*"
+    - glob: "**/*dxflrs/garage*"
+    - glob: "**/*bitnami/kubectl*"
+  authorities:
+    - static:
+        action: pass

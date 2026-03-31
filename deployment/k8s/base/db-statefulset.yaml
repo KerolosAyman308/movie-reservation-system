@@ -5,7 +5,6 @@ metadata:
   labels:
     app: db-statefulset
   name: db-statefulset
-  namespace: movie-reservation
 spec:
   serviceName: db-service
   volumeClaimTemplates:
@@ -13,7 +12,7 @@ spec:
       name: db-statefulset-pvc
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: ""
+      storageClassName: "local-path"
       resources:
         requests:
           storage: 250Mi
@@ -28,7 +27,7 @@ spec:
         app: db-statefulset
     spec:
       containers:
-      - image: mysql:8.0
+      - image: mysql@sha256:64756cc92f707eb504496d774353990bcb0f6999ddf598b6ad188f2da66bd000
         name: mysql
         envFrom:
           - secretRef:
