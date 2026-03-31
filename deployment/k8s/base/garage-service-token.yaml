@@ -36,5 +36,3 @@ rules:
   - patch
   - update
   - delete
-  resourceNames:
-    - garage-app-secret

@@ -51,7 +51,11 @@ func configAws(myCfg config.Config, db *gorm.DB) (f.IFiles, error) {
 		return nil, err
 	}
 	s3Client := s3.NewFromConfig(s3Config, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(myCfg.File.AWSHost)
+		o.Region = "garage"
 		o.UsePathStyle = true
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+		o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
 	})
 
 	uploader := manager.NewUploader(s3Client)
@@ -77,9 +81,16 @@ func InitializeAPI(db *gorm.DB, cfg config.Config) *chi.Mux {
 	userService := user.NewService(repo)
 
 	//fileService := f.NewFileService(cfg, db)
-	awsService, _ := configAws(cfg, db)
+	//awsService, _ := configAws(cfg, db)
+	var storageService f.IFiles
+	if cfg.File.UseFile {
+		storageService = f.NewFileService(cfg, db)
+	} else {
+		storageService, _ = configAws(cfg, db)
+	}
+
 	genreService := ms.NewGenreService(db)
-	movieService := ms.NewMoviesService(db, genreService, awsService, cfg.File.BucketName)
+	movieService := ms.NewMoviesService(db, genreService, storageService, cfg.File.BucketName)
 
 	authMw := middleware.NewAuthMiddleware(authenticator, userService)
 	userHandler := user.NewUserHandler(userService)
