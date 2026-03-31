@@ -44,6 +44,7 @@ func Load() Config {
 			AWSAccessKey:  getValue("AWS_ACCESS_KEY", nil),
 			AWSSecretKey:  getValue("AWS_SECRET_KEY", nil),
 			AWSHost:       getValue("AWS_URL", nil),
+			UseFile:       getValueAsBool("USE_FILE", false),
 		},
 	}
 }
@@ -66,4 +67,11 @@ func getValueAsInt(key string, fallback *int) int {
 		return *fallback
 	}
 	return n
+}
+
+func getValueAsBool(key string, fallback bool) bool {
+	str := strconv.FormatBool(fallback)
+	value := getValue(key, &str)
+
+	return value == "true"
 }
