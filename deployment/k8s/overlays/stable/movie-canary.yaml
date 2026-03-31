@@ -38,7 +38,7 @@ spec:
               done;
               echo "Garage is UP"
         - name: copy-migration
-          image: kerolosayman308/movie-reservation@sha256:0103ff13f6d7356c36c32f82ab6e5f06a1df193280af7ced93f30b01c779f8dd
+          image: kerolosayman308/movie-reservation@sha256:1ac7926ad41eb468b92e2b0d8f2db3cb99e1c50c5d26e8c9ffdb092054e268a2
           command:
             - sh
             - "-c"
@@ -75,7 +75,7 @@ spec:
           - mountPath: /prod/
             name: shared-env
       containers:
-      - image: kerolosayman308/movie-reservation@sha256:0103ff13f6d7356c36c32f82ab6e5f06a1df193280af7ced93f30b01c779f8dd
+      - image: kerolosayman308/movie-reservation@sha256:1ac7926ad41eb468b92e2b0d8f2db3cb99e1c50c5d26e8c9ffdb092054e268a2
         name: movie-reservation
         volumeMounts:
           - mountPath: /prod/.env
