@@ -16,7 +16,9 @@ func init() {
 func WriteJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(data)
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+	return encoder.Encode(data)
 }
 
 func ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
