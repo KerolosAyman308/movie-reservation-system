@@ -6,4 +6,5 @@ type ConfigFile struct {
 	AWSAccessKey  string
 	AWSSecretKey  string
 	AWSHost       string
+	UseFile       bool
 }
